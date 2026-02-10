@@ -1,5 +1,5 @@
 # python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel, EmailStr
 from supabase_client import supabase
 
@@ -49,6 +49,7 @@ def signup(req: SignUpRequest):
             raise HTTPException(status_code=409, detail="Email already registered")
         raise HTTPException(status_code=500, detail=msg)
 
+
 @app.post("/auth/signin")
 def signin(req: SignInRequest):
     try:
@@ -80,3 +81,25 @@ def signin(req: SignInRequest):
         if "invalid" in msg.lower() or "credentials" in msg.lower():
             raise HTTPException(status_code=401, detail="Invalid credentials")
         raise HTTPException(status_code=500, detail=msg)
+
+
+@app.get("/auth/me")
+def me(authorization: str = Header(default="")):
+    # Authorization: Bearer <token>
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+
+    token = authorization.split(" ", 1)[1].strip()
+    try:
+        res = supabase.auth.get_user(token)
+        user = res.user
+        return {
+            "ok": True,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "nickname": (user.user_metadata or {}).get("nickname"),
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))

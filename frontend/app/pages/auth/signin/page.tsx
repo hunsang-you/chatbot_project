@@ -32,7 +32,7 @@ export default function SignInPage() {
         throw new Error(t.slice(0, 300) || `Login failed: ${res.status}`);
       }
 
-      window.location.href = "/pages/chat"; // 너 구조 기준
+      window.location.href = "/pages/chat";
     } catch (e: any) {
       setError(e?.message ?? "Unknown error");
     } finally {
